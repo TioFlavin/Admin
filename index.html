@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Filmes</title>
+    <style>
+body {
+    font-family: Arial, sans-serif;
+    margin: 20px;
+    background-color: #f5f5f5;
+}
+
+h2 {
+    color: #333;
+}
+
+ul {
+    list-style: none;
+    padding: 0;
+}
+
+li {
+    background-color: #fff;
+    border: 1px solid #ddd;
+    margin: 5px 0;
+    padding: 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+}
+
+li:hover {
+    background-color: #f0f0f0;
+}
+
+input[type="text"] {
+    width: 100%;
+    padding: 8px;
+    margin-bottom: 10px;
+    box-sizing: border-box;
+}
+
+button {
+    background-color: #4caf50;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 16px;
+    margin: 4px 2px;
+    cursor: pointer;
+}
+
+button:hover {
+    background-color: #45a049;
+}
+
+#detalhes-filme {
+    margin-top: 20px;
+}
+
+li button {
+    margin: 0;
+}
+    </style>
+</head>
+<body>
+
+<h2>Filmes</h2>
+
+<ul id="filme-list">
+    
+</ul>
+
+<div id="detalhes-filme">
+    
+</div>
+
+<div>
+    <label for="novo-titulo">Novo Título:</label>
+    <input type="text" id="novo-titulo">
+    
+    <label for="novo-banner">URL do Banner:</label>
+    <input type="text" id="novo-banner">
+    
+    <label for="novo-link">Link do Filme:</label>
+    <input type="text" id="novo-link">
+    
+    <button onclick="adicionarFilme()">Adicionar Novo Filme</button>
+</div>
+
+<script>
+    const xhr = new XMLHttpRequest();
+    xhr.onreadystatechange = function() {
+        if (this.readyState === 4 && this.status === 200) {
+            const filmesJSON = JSON.parse(this.responseText);
+            filmes.push(...filmesJSON);
+            atualizarLista();
+        }
+    };
+    xhr.open('GET', 'filmes.json', true);
+    xhr.send();
+
+    const filmes = [];
+    const filmeList = document.getElementById('filme-list');
+
+    function atualizarLista() {
+        filmeList.innerHTML = '';
+        filmes.forEach(filme => {
+            const listItem = document.createElement('li');
+            listItem.innerHTML = `<strong>${filme.title}</strong> <button onclick="editarFilme('${filme.title}', '${filme.banner}', '${filme.link}')">Editar</button> <button onclick="apagarFilme('${filme.title}')">Apagar</button>`;
+            listItem.style.cursor = "pointer";
+            filmeList.appendChild(listItem);
+        });
+    }
+
+    function adicionarFilme() {
+        const novoTitulo = document.getElementById('novo-titulo').value;
+        const novoBanner = document.getElementById('novo-banner').value;
+        const novoLink = document.getElementById('novo-link').value;
+
+        if (novoTitulo && novoBanner && novoLink) {
+            const novoFilme = {
+                title: novoTitulo,
+                banner: novoBanner,
+                link: novoLink
+            };
+
+            filmes.push(novoFilme);
+            atualizarLista();
+
+            document.getElementById('novo-titulo').value = '';
+            document.getElementById('novo-banner').value = '';
+            document.getElementById('novo-link').value = '';
+
+            atualizarFilmesNoServidor();
+        } else {
+            alert('Por favor, preencha todos os campos.');
+        }
+    }
+
+    function editarFilme(title, banner, link) {
+        const novoTitulo = prompt('Digite o novo título para o filme:', title);
+        const novoBanner = prompt('Digite o novo URL do Banner:', banner);
+        const novoLink = prompt('Digite o novo Link do Filme:', link);
+
+        if (novoTitulo !== null && novoBanner !== null && novoLink !== null) {
+            const filmeEditado = filmes.find(filme => filme.title === title);
+            if (filmeEditado) {
+                filmeEditado.title = novoTitulo;
+                filmeEditado.banner = novoBanner;
+                filmeEditado.link = novoLink;
+            }
+
+            atualizarLista();
+            atualizarFilmesNoServidor();
+        }
+    }
+
+    function apagarFilme(title) {
+        const confirmacao = confirm('Tem certeza que deseja apagar este filme?');
+        if (confirmacao) {
+            const indice = filmes.findIndex(filme => filme.title === title);
+            if (indice !== -1) {
+                filmes.splice(indice, 1);
+            }
+
+            atualizarLista();
+            atualizarFilmesNoServidor();
+        }
+    }
+
+    function atualizarFilmesNoServidor() {
+        const xhr = new XMLHttpRequest();
+        xhr.open('POST', 'atualizar_filmes.php', true);
+        xhr.setRequestHeader('Content-Type', 'application/json;charset=UTF-8');
+        xhr.send(JSON.stringify(filmes));
+    }
+</script>
+
+</body>
+</html>
